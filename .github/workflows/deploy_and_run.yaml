@@ -2,14 +2,9 @@ name: Deploy & Run
 
 on:
   workflow_dispatch:
-    secrets:
-      AWS_ROLE_ARN:
-        description: AWS_ROLE_ARN
-        required: true
 
 jobs:
   run_task:
-    needs: deploy
     runs-on: ubuntu-latest
     permissions:
       id-token: write
