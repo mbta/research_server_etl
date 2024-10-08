@@ -176,9 +176,7 @@ def alt_run(db_manager: DatabaseManager) -> None:
         )
         sftp_client = ssh_client.open_sftp()
 
-        # sftp_paths = walk_sftp_dirs(sftp_client, "out/20240514")
-        # sftp_paths += walk_sftp_dirs(sftp_client, "out/20240517")
-        sftp_paths = walk_sftp_dirs(sftp_client, "out/20240711")
+        sftp_paths = walk_sftp_dirs(sftp_client, "out/202408")
 
         process_logger.add_metadata(file_count=len(sftp_paths))
         for sftp_path in sftp_paths:
