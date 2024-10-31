@@ -13,7 +13,8 @@ from research_etl.utils.util_logging import ProcessLogger
 
 
 BOX_IMPORT_FOLDER_ID = "287803137437"  # BoxAPI folder
-ALLOWED_SCHEMAS = ("surveys",) # schemas this job can load into
+ALLOWED_SCHEMAS = ("surveys",)  # schemas this job can load into
+
 
 def verify_import_folder(box_manager: BoxManager) -> Tuple[FolderFull, FolderFull]:
     """
@@ -51,26 +52,25 @@ def load_file_to_rds(box_manager: BoxManager, file: File) -> bool:
     """
     logger = ProcessLogger("opmi_load_box_file", file_name=file.name, file_id=file.id)
     logger.log_start()
+
     try:
         schema, table_name = file.name.lower().replace(".csv", "").split("_", maxsplit=1)
-
         if schema not in ALLOWED_SCHEMAS:
             raise PermissionError(f"box_loader job not allowed to load into {schema} schema.")
 
         target_table = f"{schema}.{table_name}"
-
         logger.add_metadata(target_table=target_table)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_file = os.path.join(temp_dir, "temp.csv")
             box_manager.download_file(file, temp_file)
             copy_gzip_csv_to_db(temp_file, target_table)
+        logger.log_complete()
 
     except Exception as exception:
         logger.log_failure(exception)
         return False
 
-    logger.log_complete()
     return True
 
 

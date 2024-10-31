@@ -31,14 +31,14 @@ class BoxManager:
         logger.log_start()
 
         try:
-            jwt_config = JWTConfig.from_config_json_string(json.dumps(json.loads(os.getenv("OPMI_BOX_JWT"), strict=False)))
+            config_as_string = json.dumps(json.loads(os.getenv(jwt_env_var), strict=False))
+            jwt_config = JWTConfig.from_config_json_string(config_as_string)
             auth = BoxJWTAuth(jwt_config)
             self.client = BoxClient(auth)
+            logger.log_complete()
         except Exception as exception:
             logger.log_failure(exception)
             raise exception
-
-        logger.log_complete()
 
     def list_folder(
         self, folder_id: str = "0", limit: int = 1_000
@@ -58,14 +58,14 @@ class BoxManager:
         try:
             items = self.client.folders.get_folder_items(folder_id, limit=limit)
             logger.add_metadata(total_count=items.total_count)
+            logger.log_complete()
         except Exception as exception:
             logger.log_failure(exception)
             raise exception
 
-        logger.log_complete()
         return items.entries
 
-    def download_file(self, file: File, local_path: str) -> bool:
+    def download_file(self, file: File, local_path: str) -> None:
         """
         download box file to local path
 
@@ -78,13 +78,12 @@ class BoxManager:
         """
         logger = ProcessLogger("box_download_file", file_name=file.name, local_path=local_path)
         logger.log_start()
+
         try:
             with open(local_path, "wb") as writer:
                 writer.write(self.client.downloads.download_file(file.id).read())
+            logger.log_complete()
 
         except Exception as exception:
             logger.log_failure(exception)
-            return False
-
-        logger.log_complete()
-        return True
+            raise exception
