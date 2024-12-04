@@ -31,8 +31,8 @@ class BoxManager:
         logger.log_start()
 
         try:
-            config_as_string = json.dumps(json.loads(os.getenv(jwt_env_var), strict=False))
-            jwt_config = JWTConfig.from_config_json_string(config_as_string)
+            config_as_dict = json.loads(str(os.getenv(jwt_env_var)), strict=False)
+            jwt_config = JWTConfig.from_config_json_string(json.dumps(config_as_dict))
             auth = BoxJWTAuth(jwt_config)
             self.client = BoxClient(auth)
             logger.log_complete()
