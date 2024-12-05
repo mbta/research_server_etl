@@ -289,7 +289,7 @@ class DatabaseManager:
 
 def copy_gzip_csv_to_db(local_path: str, destination_table: str) -> None:
     """
-    load local csv.gzip file into DB using psql COPY command
+    load local csv (or csv.gz) file into DB using psql COPY command
 
     table headers are required to be in first row of file
 
@@ -305,16 +305,16 @@ def copy_gzip_csv_to_db(local_path: str, destination_table: str) -> None:
     )
     copy_log.log_start()
 
-    with gzip.open(local_path, "rt") as gzip_file:
-        local_columns = gzip_file.readline().strip().lower().split(",")
+    copy_from = f"FROM PROGRAM 'gzip -dc {local_path}' "
+    if local_path.lower().endswith(".gz"):
+        with gzip.open(local_path, "rt") as gzip_file:
+            local_columns = gzip_file.readline().strip().lower().split(",")
+    else:
+        copy_from = f"FROM {local_path}"
+        with open(local_path, "rt", encoding="utf8") as csv_file:
+            local_columns = csv_file.readline().strip().lower().split(",")
 
-    copy_command = (
-        f"\\COPY {destination_table} "
-        f"({','.join(local_columns)}) "
-        "FROM PROGRAM "
-        f"'gzip -dc {local_path}' "
-        "WITH CSV HEADER"
-    )
+    copy_command = f"\\COPY {destination_table} ({','.join(local_columns)}) {copy_from} WITH CSV HEADER"
 
     psql = [
         "psql",
