@@ -13,7 +13,10 @@ from research_etl.utils.util_logging import ProcessLogger
 
 
 BOX_IMPORT_FOLDER_ID = "287803137437"  # BoxAPI folder
-ALLOWED_SCHEMAS = ("surveys",)  # schemas this job can load into
+ALLOWED_SCHEMAS = (  # schemas this job can load into
+    "surveys",
+    "panel",
+)
 
 
 def verify_import_folder(box_manager: BoxManager) -> Tuple[FolderFull, FolderFull]:
