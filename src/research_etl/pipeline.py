@@ -1,6 +1,5 @@
 import os
 
-from research_etl.etl_gtfs.gtfs_job import run as gtfs_job
 from research_etl.etl_korbato.korbato_job import run as odx_job
 from research_etl.etl_afc.afc_job import run as afc_job
 from research_etl.mbta_open_data.box_loader_job import run as box_import_job
@@ -19,7 +18,6 @@ def run_jobs() -> None:
 
     db_manager = DatabaseManager()
 
-    gtfs_job(db_manager)
     odx_job(db_manager)
     afc_job(db_manager)
     box_import_job()
