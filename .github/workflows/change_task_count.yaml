@@ -33,6 +33,6 @@ jobs:
         run: >
           aws ecs update-service
           --cluster opmi-etl
-          --service odin-etl-${{ github.event.inputs.environment }}
+          --service opmi-etl-${{ github.event.inputs.environment }}
           --desired-count ${{ github.event.inputs.new_count }}
         # yamllint enable
