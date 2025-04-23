@@ -31,7 +31,6 @@ def download_file(object_path: str, file_name: str) -> bool:
         file_name=file_name,
         object_path=object_path,
     )
-    download_log.log_start()
 
     try:
         if os.path.exists(file_name):
@@ -63,7 +62,6 @@ def file_list_from_s3(bucket_name: str, file_prefix: str, max_list_size: int = 2
     :return list of s3 filepaths formated as s3://bucket_name/object_name
     """
     process_logger = ProcessLogger("file_list_from_s3", bucket_name=bucket_name, file_prefix=file_prefix)
-    process_logger.log_start()
 
     try:
         s3_client = get_s3_client()
@@ -101,7 +99,6 @@ def delete_object(del_obj: str) -> bool:
     """
     try:
         process_logger = ProcessLogger("delete_s3_object", del_obj=del_obj)
-        process_logger.log_start()
 
         s3_client = get_s3_client()
 
@@ -136,7 +133,6 @@ def rename_s3_object(source_obj: str, dest_obj: str) -> bool:
     """
     try:
         process_logger = ProcessLogger("rename_s3_object", source_obj=source_obj, dest_obj=dest_obj)
-        process_logger.log_start()
 
         s3_client = get_s3_client()
 
@@ -180,7 +176,6 @@ def check_for_parallel_tasks() -> None:
         return
 
     process_logger = ProcessLogger("check_for_tasks")
-    process_logger.log_start()
 
     client = boto3.client("ecs")
     ecs_cluster = os.environ["ECS_CLUSTER"]

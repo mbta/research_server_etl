@@ -50,7 +50,6 @@ def connect_ssh_client(hostname: str = "", username: str = "") -> paramiko.SSHCl
     get/create paramiko sftp client
     """
     logger = ProcessLogger("create_ssh_client")
-    logger.log_start()
 
     if hostname == "":
         hostname = os.getenv("KORBATO_HOSTNAME", "")
@@ -84,7 +83,6 @@ def download_sftp_file(sftp_path: str, local_path: str, sftp_client: paramiko.SF
     download an sftp_path to a local_path
     """
     download_logger = ProcessLogger("sftp_download", sftp_path=sftp_path, local_path=local_path)
-    download_logger.log_start()
 
     try:
         sftp_client.get(sftp_path, local_path)
@@ -136,7 +134,6 @@ def run(db_manager: DatabaseManager) -> None:
     load any csv.zip files available in the Korbato SFTP folder
     """
     process_logger = ProcessLogger("etl_korbato")
-    process_logger.log_start()
 
     try:
         ssh_client = connect_ssh_client()
@@ -168,7 +165,6 @@ def alt_run(db_manager: DatabaseManager) -> None:
     load any csv.zip files available in the catch-up Korbato SFTP folder
     """
     process_logger = ProcessLogger("catch_up_korbato")
-    process_logger.log_start()
 
     try:
         ssh_client = connect_ssh_client(

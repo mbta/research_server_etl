@@ -12,7 +12,6 @@ from research_etl.utils.util_logging import ProcessLogger
 def run(db_manager: DatabaseManager) -> None:
     """Gated Station Entries Job"""
     process_log = ProcessLogger("etl_gse_csv")
-    process_log.log_start()
 
     today = datetime.date.today()
     month_start = today.replace(day=1)

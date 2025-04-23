@@ -276,7 +276,6 @@ def load_gtfs_table(
     Load a GTFS table
     """
     load_log = ProcessLogger("load_gtfs_table", table_name=table.table_name)
-    load_log.log_start()
 
     with zipfile.ZipFile(gtfs_bytes) as gtfs_zip:
         table_df = polars.read_csv(
@@ -331,7 +330,6 @@ def build_shapes_geog(
     Create shapes_geog table
     """
     build_log = ProcessLogger("build_shapes_geog")
-    build_log.log_start()
 
     main_table = f"{DB_GTFS_SCHEMA}.shapes_geog"
     new_table_name = partition_table_name("shapes_geog", valid_start_date, valid_end_date)
@@ -370,7 +368,6 @@ def build_stops_geog(
     Create stops_geog table
     """
     build_log = ProcessLogger("build_stops_geog")
-    build_log.log_start()
 
     main_table = f"{DB_GTFS_SCHEMA}.stops_geog"
     new_table_name = partition_table_name("stops_geog", valid_start_date, valid_end_date)
@@ -421,7 +418,6 @@ def build_stops_in_pattern(
     Create stop_in_pattern table
     """
     build_log = ProcessLogger("build_stops_in_pattern")
-    build_log.log_start()
 
     main_table = f"{DB_GTFS_SCHEMA}.stop_in_pattern"
     new_table_name = partition_table_name("stop_in_pattern", valid_start_date, valid_end_date)
@@ -478,7 +474,6 @@ def run(db_manager: DatabaseManager) -> None:
     if feed_version's do not match, load GTFS schedule
     """
     process_logger = ProcessLogger("etl_gtfs")
-    process_logger.log_start()
     try:
         gtfs_bytes, gtfs_headers = download_gtfs()
 

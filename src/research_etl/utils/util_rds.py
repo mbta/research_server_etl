@@ -82,7 +82,6 @@ def create_db_connection_string() -> str:
     produce database connection string from environment
     """
     process_log = ProcessLogger("create_db_connection_string")
-    process_log.log_start()
 
     db_host = get_db_host()
     db_name = os.environ.get("DB_NAME")
@@ -136,7 +135,6 @@ def postgres_event_update_db_password(
     this will refresh db auth token passwords
     """
     process_logger = ProcessLogger("password_refresh")
-    process_logger.log_start()
     cparams["password"] = get_db_password()
     process_logger.log_complete()
 
@@ -149,7 +147,6 @@ def get_local_engine(
     via docker using env variables
     """
     process_logger = ProcessLogger("create_sql_engine")
-    process_logger.log_start()
     try:
         database_url = f"postgresql+psycopg2://{create_db_connection_string()}"
 
@@ -303,7 +300,6 @@ def copy_gzip_csv_to_db(local_path: str, destination_table: str) -> None:
         local_file=local_path,
         destination_table=destination_table,
     )
-    copy_log.log_start()
 
     copy_from = f"FROM PROGRAM 'gzip -dc {local_path}' "
     if local_path.lower().endswith(".gz"):
@@ -343,7 +339,6 @@ def afc_copy(obj_path: str, destination_table: str, headers: List[str], null_as:
         destination_table=destination_table,
         headers=" | ".join(headers),
     )
-    copy_log.log_start()
 
     copy_from = f"FROM {obj_path} "
     if obj_path.lower().startswith("s3://") and obj_path.lower().endswith(".gz"):
@@ -399,7 +394,6 @@ def copy_zip_csv_to_db(local_path: str, destination_table: str) -> None:
         destination_table=destination_table,
         row_count=zip_line_count(local_path),
     )
-    copy_log.log_start()
 
     with zipfile.ZipFile(local_path, "r") as zip_files:
         csv_file = zip_files.filelist[0].filename

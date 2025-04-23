@@ -12,7 +12,6 @@ def walk_sftp_dirs(sftp: paramiko.SFTP, remote_dir: str = ".") -> List[str]:
     return list of all files found by walking sftp dirs
     """
     logger = ProcessLogger("walk_sftp_dirs", remote_dir=remote_dir)
-    logger.log_start()
     file_list = []
     for entry in sftp.listdir_attr(remote_dir):
         if entry.st_mode is None:

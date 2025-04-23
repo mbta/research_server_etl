@@ -2,6 +2,7 @@ import logging
 import os
 import time
 import uuid
+import traceback
 from typing import Any, Dict, Union, Optional
 
 MdValues = Optional[Union[str, int, float]]
@@ -23,10 +24,13 @@ class ProcessLogger:
         "error_type",
     ]
 
-    def __init__(self, process_name: str, **metadata: MdValues) -> None:
+    def __init__(self, process_name: str, auto_start: bool = True, **metadata: MdValues) -> None:
         """
-        create a process logger with a name and optional metadata. a start time
-        and uuid will be created for timing and unique identification
+        reate a process logger with a name and optional metadata.
+
+        :param process: name of process being logged
+        :param auto_start: bool -> if True(default) automatically start log
+        :param metadata: any key/value pair to log
         """
         logging.getLogger().setLevel("INFO")
 
@@ -37,13 +41,18 @@ class ProcessLogger:
         self.default_data["process_name"] = process_name
 
         self.start_time = 0.0
+        self.uuid = ""
 
         self.add_metadata(**metadata)
+
+        if auto_start:
+            self.start()
 
     def _get_log_string(self) -> str:
         """create logging string for log write"""
         logging_list = []
         # add default data to log output
+        logging_list.append(f"uuid={self.uuid}")
         for key, value in self.default_data.items():
             logging_list.append(f"{key}={value}")
 
@@ -62,9 +71,9 @@ class ProcessLogger:
                 continue
             self.metadata[str(key)] = str(value)
 
-    def log_start(self) -> None:
+    def start(self) -> None:
         """log the start of a proccess"""
-        self.default_data["uuid"] = uuid.uuid4()
+        self.uuid = str(uuid.uuid4())
         self.default_data["process_id"] = os.getpid()
         self.default_data["status"] = "started"
         self.default_data.pop("duration", None)
@@ -74,8 +83,14 @@ class ProcessLogger:
 
         logging.info(self._get_log_string())
 
-    def log_complete(self) -> None:
-        """log the completion of a proccess with duration"""
+    def log_complete(self, **metadata: MdValues) -> None:
+        """
+        Log completion of a proccess.
+
+        :param metadata: any key/value pair to log
+        """
+        self.add_metadata(print_log=False, **metadata)
+
         duration = time.monotonic() - self.start_time
         self.default_data["status"] = "complete"
         self.default_data["duration"] = f"{duration:.2f}"
@@ -89,6 +104,19 @@ class ProcessLogger:
         self.default_data["duration"] = f"{duration:.2f}"
         self.default_data["error_type"] = type(exception).__name__
 
-        logging.exception(self._get_log_string())
+        # This is for exceptions that are not 'raised'
+        # 'raised' exceptions will also be logged to sys.stderr
+        for tb in traceback.format_tb(exception.__traceback__):
+            for line in tb.strip("\n").split("\n"):
+                p_line = line.strip("\n")
+                tb_line = f"uuid={self.uuid}, {p_line}"
+                logging.error(tb_line)
 
-        logging.exception(exception)
+        # Log Exception
+        for line in traceback.format_exception_only(exception):
+            p_line = line.strip("\n")
+            except_line = f"uuid={self.uuid}, {p_line}"
+            logging.error(except_line)
+
+        # Log Process Failure
+        logging.info(self._get_log_string())

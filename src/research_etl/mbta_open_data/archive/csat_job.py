@@ -12,7 +12,6 @@ from research_etl.utils.util_logging import ProcessLogger
 def run(db_manager: DatabaseManager) -> None:
     """CSAT Job"""
     process_log = ProcessLogger("etl_csat_csv")
-    process_log.log_start()
 
     today = datetime.date.today()
     # start of prior month

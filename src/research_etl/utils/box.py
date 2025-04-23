@@ -28,7 +28,6 @@ class BoxManager:
         :param jwt_env_var: ENV VAR name to pull Box JWT from
         """
         logger = ProcessLogger("box_manager")
-        logger.log_start()
 
         try:
             config_as_dict = json.loads(str(os.getenv(jwt_env_var)), strict=False)
@@ -53,7 +52,6 @@ class BoxManager:
         :param limit: Maximum number of items to return as list
         """
         logger = ProcessLogger("box_list_folder")
-        logger.log_start()
 
         try:
             items = self.client.folders.get_folder_items(folder_id, limit=limit)
@@ -77,7 +75,6 @@ class BoxManager:
         :return True if download success, else False
         """
         logger = ProcessLogger("box_download_file", file_name=file.name, local_path=local_path)
-        logger.log_start()
 
         try:
             with open(local_path, "wb") as writer:

@@ -54,7 +54,6 @@ def load_file_to_rds(box_manager: BoxManager, file: File) -> bool:
     :return: True if load success, else False
     """
     logger = ProcessLogger("opmi_load_box_file", file_name=file.name, file_id=file.id)
-    logger.log_start()
 
     try:
         schema, table_name = file.name.lower().replace(".csv", "").split("_", maxsplit=1)
@@ -95,7 +94,6 @@ def run() -> None:
         4.b If load error occurs, move file to "aws_error" folder
     """
     job_logger = ProcessLogger("box_loader_job")
-    job_logger.log_start()
 
     success_count = 0
     error_count = 0
