@@ -63,7 +63,11 @@ class ProcessLogger:
         return ", ".join(logging_list)
 
     def add_metadata(self, **metadata: MdValues) -> None:
-        """add metadata to the process logger"""
+        """
+        Add metadata to a log.
+
+        :param metadata: any key/value pair to log
+        """
         for key, value in metadata.items():
             # skip metadata key if protected as default_data key
             # maybe raise on this? instead of fail silently
@@ -89,7 +93,7 @@ class ProcessLogger:
 
         :param metadata: any key/value pair to log
         """
-        self.add_metadata(print_log=False, **metadata)
+        self.add_metadata(**metadata)
 
         duration = time.monotonic() - self.start_time
         self.default_data["status"] = "complete"

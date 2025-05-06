@@ -2,6 +2,7 @@ import os
 
 from research_etl.etl_korbato.korbato_job import run as odx_job
 from research_etl.etl_afc.afc_job import run as afc_job
+from research_etl.mbta_open_data.sharepoint_loader_job import run as sharepoint_load_job
 
 from research_etl.utils.util_aws import check_for_parallel_tasks
 from research_etl.utils.util_rds import DatabaseManager
@@ -19,6 +20,7 @@ def run_jobs() -> None:
 
     odx_job(db_manager)
     afc_job(db_manager)
+    sharepoint_load_job()
 
 
 if __name__ == "__main__":
