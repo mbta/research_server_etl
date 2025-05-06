@@ -61,8 +61,7 @@ def load_file_to_rds(sp_manager: SharePointManager, item: DriveItem) -> bool:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_file = os.path.join(temp_dir, "temp.csv")
-            file_path = os.path.join(SHAREPOINT_IMPORT_FOLDER_PATH, item.name)
-            sp_manager.download_item(file_path, temp_file)
+            sp_manager.download_item(item.id, temp_file)
             copy_gzip_csv_to_db(temp_file, target_table)
 
         logger.log_complete()

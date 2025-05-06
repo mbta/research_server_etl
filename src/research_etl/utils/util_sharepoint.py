@@ -151,7 +151,6 @@ class SharePointManager:
         logger = ProcessLogger("sp_download_item", item_id=item_id, local_path=local_path)
 
         try:
-            # Build URL: GET /sites/{site_id}/drive/root:/{file_path}:/content
             url = f"{self.drive_url}/items/{item_id}/content"
             resp = self.get_request(url)
             with open(local_path, "wb") as writer:
