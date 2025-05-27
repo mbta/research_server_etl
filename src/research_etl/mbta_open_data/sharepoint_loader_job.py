@@ -112,7 +112,7 @@ def run() -> None:
 
             load_status = load_file_to_rds(sp_manager, item)
 
-            new_file_name = f"{datetime.now().isoformat()}_{item.name}"
+            new_file_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{item.name}"
             if load_status:
                 success_count += 1
                 sp_manager.move_item(item.id, success_folder.id, new_file_name=new_file_name)
