@@ -17,7 +17,8 @@ boto3 = "^1.29.4"
 pandas = "^2.2.2"
 pyarrow = "^17.0.0"
 paramiko = "^3.4.0"
-box-sdk-gen = {extras = ["jwt"], version = "^1.5.1"}
+msal = "^1.32.3"
+requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.26.0"
@@ -25,6 +26,7 @@ black = "^23.11.0"
 pylint = "^3.0.2"
 mypy = "^1.7.0"
 types-paramiko = "^3.3.0.2"
+types-requests = "^2.32.0.20250328"
 
 [build-system]
 requires = ["poetry-core"]
@@ -52,6 +54,8 @@ disable = [
   "lost-exception",
   # caught by black
   "line-too-long",
+  "too-many-instance-attributes",
+  "too-many-arguments",
 ]
 good-names = ["e", "i", "s"]
 max-line-length = 120
