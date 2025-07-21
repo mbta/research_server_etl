@@ -100,6 +100,7 @@ def load_korbato_file(local_path: str, db_manager: DatabaseManager) -> None:
 
     /tmp/20240309_vehicle_day_20240312-200001.csv.zip_u569z9u
     """
+    log = ProcessLogger("load_korbato_file", local_path=local_path)
     file_name = local_path.split("/")[-1]
 
     schema = os.getenv("KORBATO_SCHEMA", "")
@@ -112,18 +113,20 @@ def load_korbato_file(local_path: str, db_manager: DatabaseManager) -> None:
         service_date = datetime.date(year, month, day)
 
         table = file_name[9:].rsplit("_", 1)[0]
-
         if table == "fare_transaction":
+            log.add_metadata(status="verify_partition")
             verify_partition(service_date, table, db_manager)
 
-        del_q = sa.text(f"DELETE FROM {schema}.{table} WHERE svc_date = '{year}-{month}-{day}'")
+        log.add_metadata(status="delete_scv_date")
+        del_q = sa.text(f"DELETE FROM {schema}.{table} WHERE svc_date = '{year}-{month}-{day}';")
         db_manager.execute(del_q)
 
     # handle lookup tables
     else:
         table = file_name.rsplit("_", 1)[0]
+        log.add_metadata(status="truncate_table")
         db_manager.truncate_table(f"{schema}.{table}")
-
+    log.log_complete()
     copy_zip_csv_to_db(local_path, f"{schema}.{table}")
 
 
@@ -134,7 +137,8 @@ def run(db_manager: DatabaseManager) -> None:
     load any csv.zip files available in the Korbato SFTP folder
     """
     process_logger = ProcessLogger("etl_korbato")
-
+    ssh_client = None
+    sftp_client = None
     try:
         ssh_client = connect_ssh_client()
         sftp_client = ssh_client.open_sftp()
@@ -149,13 +153,16 @@ def run(db_manager: DatabaseManager) -> None:
                 download_sftp_file(sftp_path, temp_file, sftp_client)
                 load_korbato_file(temp_file, db_manager)
 
-        sftp_client.close()
-        ssh_client.close()
-
         process_logger.log_complete()
 
     except Exception as exception:
         process_logger.log_failure(exception)
+
+    finally:
+        if sftp_client is not None:
+            sftp_client.close()
+        if ssh_client is not None:
+            ssh_client.close()
 
 
 def alt_run(db_manager: DatabaseManager) -> None:
@@ -165,7 +172,8 @@ def alt_run(db_manager: DatabaseManager) -> None:
     load any csv.zip files available in the catch-up Korbato SFTP folder
     """
     process_logger = ProcessLogger("catch_up_korbato")
-
+    ssh_client = None
+    sftp_client = None
     try:
         ssh_client = connect_ssh_client(
             hostname="sftp.korbato.com",
@@ -184,13 +192,16 @@ def alt_run(db_manager: DatabaseManager) -> None:
                 download_sftp_file(sftp_path, temp_file, sftp_client)
                 load_korbato_file(temp_file, db_manager)
 
-        sftp_client.close()
-        ssh_client.close()
-
         process_logger.log_complete()
 
     except Exception as exception:
         process_logger.log_failure(exception)
+
+    finally:
+        if sftp_client is not None:
+            sftp_client.close()
+        if ssh_client is not None:
+            ssh_client.close()
 
 
 if __name__ == "__main__":
