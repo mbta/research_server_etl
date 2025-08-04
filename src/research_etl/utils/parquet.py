@@ -39,9 +39,7 @@ def file_column_stats(pq_meta: pq.FileMetaData, column: str) -> list[RowGroupSta
     assert col_index >= 0
     file_stats = []
     for rg_index in range(pq_meta.num_row_groups):
-        rg_stats: RowGroupStats = (
-            pq_meta.row_group(rg_index).column(col_index).to_dict()["statistics"]
-        )
+        rg_stats: RowGroupStats = pq_meta.row_group(rg_index).column(col_index).to_dict()["statistics"]
         file_stats.append(rg_stats)
 
     return file_stats
@@ -152,7 +150,9 @@ def ds_group_jobids(ds: pd.Dataset, min_job_id: int | None = None) -> list[JobGr
     if min_job_id is not None:
         declarations.append(ac.Declaration("filter", ac.FilterNodeOptions(pc.field("job_id") > min_job_id)))
     declarations.append(
-        ac.Declaration("aggregate", ac.AggregateNodeOptions(aggregates=[(columns, "hash_count", None, "count")], keys=columns)),
+        ac.Declaration(
+            "aggregate", ac.AggregateNodeOptions(aggregates=[(columns, "hash_count", None, "count")], keys=columns)
+        ),
     )
     table = ac.Declaration.from_sequence(declarations).to_table().to_pylist()
     table = sorted(table, key=itemgetter("job_id"))
