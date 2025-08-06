@@ -20,6 +20,12 @@ SB_SCHEMA = "sb_api"
 BUCKET = os.getenv("SPRINGBOARD_BUCKET", "")
 SB_PREFIX = os.path.join(BUCKET, "odin", "data", "sb", "api", "")
 
+# The schema for these tables is defined in "tests/init_schema.sql"
+# These tables are automatically created on a new build of the DEV docker postgres instance
+# 
+# These tables must be manually created in the AWS Research Server DB. This database has no
+# automated migration tooling. TID Infra Team has 'postgres' credentials that can be used to perform
+# these manual steps.
 SB_TABLES = [
     sb_tables.person,
     sb_tables.tvmtable,
@@ -48,10 +54,10 @@ def create_partitions(ds: pd.dataset, table: sb_tables.SBTable, db: DatabaseMana
     from_dt = datetime.datetime(year=d_min.year, month=d_min.month, day=1)
     end_dt = datetime.datetime(year=d_max.year, month=d_max.month, day=1)
 
-    # partition tables appear as indivudal tables in the postres schema, but when create are
-    # "attached" to the primiary table with partitioning rules.
+    # partition tables appear as indivudal tables in the postgres schema, but when created are
+    # "attached" to the primary table with partitioning rules.
     # this query finds all partition tables associated with the primary "table_name" of `table`
-    # this list of partition tables is used to check of any new partition tables need to be created
+    # this list of partition tables is used to check if any new partition tables need to be created
     tables_query = (
         f"SELECT tablename FROM pg_tables WHERE schemaname = '{SB_SCHEMA}'"
         f" AND starts_with(tablename, '{table.table_name}_y');"
