@@ -22,7 +22,7 @@ SB_PREFIX = os.path.join(BUCKET, "odin", "data", "sb", "api", "")
 
 # The schema for these tables is defined in "tests/init_schema.sql"
 # These tables are automatically created on a new build of the DEV docker postgres instance
-# 
+#
 # These tables must be manually created in the AWS Research Server DB. This database has no
 # automated migration tooling. TID Infra Team has 'postgres' credentials that can be used to perform
 # these manual steps.
