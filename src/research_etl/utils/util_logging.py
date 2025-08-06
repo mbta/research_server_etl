@@ -66,14 +66,22 @@ class ProcessLogger:
         """
         Add metadata to a log.
 
+        :param print_log: bool -> if False(default), print log after metadata is added
         :param metadata: any key/value pair to log
         """
+        metadata.setdefault("print_log", False)
+        print_log = bool(metadata.pop("print_log"))
+
         for key, value in metadata.items():
             # skip metadata key if protected as default_data key
             # maybe raise on this? instead of fail silently
             if key in ProcessLogger.protected_keys:
                 continue
             self.metadata[str(key)] = str(value)
+
+        if self.default_data.get("status") is not None and print_log:
+            self.default_data["status"] = "add_metadata"
+            logging.info(self._get_log_string())
 
     def start(self) -> None:
         """log the start of a proccess"""

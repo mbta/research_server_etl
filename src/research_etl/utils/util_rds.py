@@ -215,19 +215,24 @@ class DatabaseManager:
             sa.sql.dml.Delete,
             sa.sql.dml.Insert,
             sa.sql.elements.TextClause,
+            str,
         ],
     ) -> sa.engine.CursorResult:
         """
         execute db action WITHOUT data
         """
+        if isinstance(statement, str):
+            statement = sa.text(statement)
         with self.session.begin() as cursor:
             result = cursor.execute(statement)
         return result  # type: ignore
 
-    def select_as_list(self, select_query: sa.sql.selectable.Select) -> Union[List[Any], List[Dict[str, Any]]]:
+    def select_as_list(self, select_query: sa.TextClause | str) -> Union[List[Any], List[Dict[str, Any]]]:
         """
         select data from db table and return list
         """
+        if isinstance(select_query, str):
+            select_query = sa.text(select_query)
         with self.session.begin() as cursor:
             return [row._asdict() for row in cursor.execute(select_query)]
 
@@ -424,7 +429,7 @@ def run_psql_subprocess(psql_cmd: List[str], logger: ProcessLogger) -> None:
     """
     run psql command with retry logic
     """
-    max_retries = 3
+    max_retries = 1
     logger.add_metadata(max_retries=max_retries)
 
     for retry_attempts in range(max_retries + 1):

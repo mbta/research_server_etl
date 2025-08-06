@@ -1,9 +1,20 @@
 import os
+import datetime
 from typing import List
+from typing import NamedTuple
+from collections.abc import Callable
 
 import boto3
 
 from research_etl.utils.util_logging import ProcessLogger
+
+
+class S3Object(NamedTuple):
+    """S3 Object return tuple"""
+
+    path: str
+    last_modified: datetime.datetime
+    size_bytes: int
 
 
 def get_s3_client() -> boto3.client:
@@ -14,6 +25,78 @@ def get_s3_client() -> boto3.client:
         return boto3.Session(profile_name=aws_profile).client("s3")
 
     return boto3.client("s3")
+
+
+def split_object(obj: str) -> tuple[str, str]:
+    """
+    Split S3 object as "s3://bucket/object_key" into Tuple[bucket, key].
+
+    :param obj: s3 object as "s3://bucket/object_key" or "bucket/object_key"
+
+    :return: Tuple[bucket, key]
+    """
+    bucket, key = obj.replace("s3://", "").split("/", 1)
+
+    return (bucket, key)
+
+
+def list_objects(
+    partition: str,
+    max_objects: int = 1_000_000,
+    in_filter: str | None = None,
+    in_func: Callable[[S3Object], bool] | None = None,
+) -> List[S3Object]:
+    """
+    Get list of S3 objects starting with 'partition'.
+
+    :param partition: S3 partition as "s3://bucket/prefix" or "bucket/prefix"
+    :param max_objects: (Optional) maximum number of objects to return
+    :param in_filter: (Optional) will filter for objects containing string
+    :param in_func:
+        (Optional) function that accepts S3Object and returns bool
+        return True to include Key in results or False to exclude from results
+
+    :return: List[s3://bucket/key, ...]
+    """
+    logger = ProcessLogger(
+        "list_objects",
+        partition=partition,
+        max_objects=max_objects,
+        in_filter=in_filter,
+    )
+    bucket, prefix = split_object(partition)
+    try:
+        client = get_s3_client()
+        paginator = client.get_paginator("list_objects_v2")
+        pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
+
+        filepaths = []
+        for page in pages:
+            if page["KeyCount"] == 0:
+                continue
+            for obj in page["Contents"]:
+                if obj["Size"] == 0:
+                    continue
+                if isinstance(in_filter, str) and in_filter not in obj["Key"]:
+                    continue
+                append_obj = S3Object(
+                    path=os.path.join("s3://", bucket, obj["Key"]),
+                    last_modified=obj["LastModified"],
+                    size_bytes=obj["Size"],
+                )
+                if callable(in_func) and in_func(append_obj) is False:
+                    continue
+                filepaths.append(append_obj)
+
+            if len(filepaths) >= max_objects:
+                break
+
+        logger.log_complete(objects_found=len(filepaths))
+        return filepaths
+
+    except Exception as exception:
+        logger.log_failure(exception)
+        return []
 
 
 def download_file(object_path: str, file_name: str) -> bool:
