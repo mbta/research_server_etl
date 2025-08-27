@@ -6,6 +6,7 @@ from typing import Union
 from typing import Any
 from typing import TypedDict
 from operator import itemgetter
+import boto3
 
 import pyarrow.parquet as pq
 import pyarrow.dataset as pd
@@ -46,7 +47,7 @@ def file_column_stats(pq_meta: pq.FileMetaData, column: str) -> list[RowGroupSta
     return file_stats
 
 
-def ds_from_path(source: Union[str, Sequence[str]], session=None) -> pd.UnionDataset:
+def ds_from_path(source: Union[str, Sequence[str]], session: boto3.Session = None) -> pd.UnionDataset:
     """
     Create pyarrow Dataset from parquet path(s). If multiple paths, schemas must be unionable.
 

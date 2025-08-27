@@ -49,7 +49,7 @@ def assume_role_session(role_arn: str, session_name: str = "assumed-role-session
             aws_session_token=credentials["SessionToken"],
         )
     except ClientError as e:
-        raise RuntimeError(f"Failed to assume AWS role: {e}")
+        raise RuntimeError(f"Failed to assume AWS role: {e}") from e
 
 
 def split_object(obj: str) -> tuple[str, str]:
@@ -65,6 +65,7 @@ def split_object(obj: str) -> tuple[str, str]:
     return (bucket, key)
 
 
+# pylint: disable=too-many-locals
 def list_objects(
     partition: str,
     max_objects: int = 1_000_000,
@@ -124,6 +125,9 @@ def list_objects(
     except Exception as exception:
         logger.log_failure(exception)
         return []
+
+
+# pylint: enable=too-many-locals
 
 
 def download_file(object_path: str, file_name: str, session: boto3.Session = None) -> bool:
