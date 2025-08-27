@@ -19,7 +19,6 @@ class S3Object(NamedTuple):
     size_bytes: int
 
 
-
 def get_s3_client(session: boto3.Session = None) -> boto3.client:
     """
     Return an S3 client from the given boto3 session, or from the default session/profile.
@@ -42,15 +41,12 @@ def assume_role_session(role_arn: str, session_name: str = "assumed-role-session
     """
     sts_client = boto3.client("sts")
     try:
-        assumed_role = sts_client.assume_role(
-            RoleArn=role_arn,
-            RoleSessionName=session_name
-        )
+        assumed_role = sts_client.assume_role(RoleArn=role_arn, RoleSessionName=session_name)
         credentials = assumed_role["Credentials"]
         return boto3.Session(
             aws_access_key_id=credentials["AccessKeyId"],
             aws_secret_access_key=credentials["SecretAccessKey"],
-            aws_session_token=credentials["SessionToken"]
+            aws_session_token=credentials["SessionToken"],
         )
     except ClientError as e:
         raise RuntimeError(f"Failed to assume AWS role: {e}")
@@ -171,7 +167,9 @@ def download_file(object_path: str, file_name: str, session: boto3.Session = Non
         return False
 
 
-def file_list_from_s3(bucket_name: str, file_prefix: str, max_list_size: int = 250_000, session: boto3.Session = None) -> List[str]:
+def file_list_from_s3(
+    bucket_name: str, file_prefix: str, max_list_size: int = 250_000, session: boto3.Session = None
+) -> List[str]:
     """
     provide list of s3 objects based on bucket_name and file_prefix
 
