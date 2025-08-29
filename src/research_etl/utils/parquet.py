@@ -6,6 +6,7 @@ from typing import Union
 from typing import Any
 from typing import TypedDict
 from operator import itemgetter
+import boto3
 
 import pyarrow.parquet as pq
 import pyarrow.dataset as pd
@@ -14,6 +15,7 @@ import pyarrow.acero as ac
 
 from research_etl.utils.util_logging import ProcessLogger
 from research_etl.utils.util_aws import list_objects
+from research_etl.utils.util_aws import get_s3_client
 
 
 class RowGroupStats(TypedDict):
@@ -45,13 +47,19 @@ def file_column_stats(pq_meta: pq.FileMetaData, column: str) -> list[RowGroupSta
     return file_stats
 
 
-def ds_from_path(source: Union[str, Sequence[str]]) -> pd.UnionDataset:
+def ds_from_path(source: Union[str, Sequence[str]], session: boto3.Session = None) -> pd.UnionDataset:
     """
     Create pyarrow Dataset from parquet path(s). If multiple paths, schemas must be unionable.
 
     :param source: parquet file path(s) on local disk or S3, if S3 must start with s3://
-
+    :param session: Optional boto3.Session to use for S3 access (e.g. from assumed role)
     :return: pyarrow Dataset of path(s) with "unionable" schema
+
+    Example usage:
+        from research_etl.utils.util_aws import assume_role_session
+        from research_etl.utils.parquet import ds_from_path
+        session = assume_role_session("arn:aws:iam::123456789012:role/YourRole")
+        ds = ds_from_path("s3://bucket/prefix", session=session)
     """
     log = ProcessLogger("ds_from_path")
     paths = []
@@ -61,7 +69,8 @@ def ds_from_path(source: Union[str, Sequence[str]]) -> pd.UnionDataset:
             paths.append(source)
         # S3 partition path
         elif source.startswith("s3://"):
-            paths = [o.path for o in list_objects(source, in_filter=".parquet")]
+            s3_client = get_s3_client(session=session) if session is not None else None
+            paths = [o.path for o in list_objects(source, in_filter=".parquet", s3_client=s3_client)]
         # local partition path
         else:
             for w_dir, _, files in os.walk(source):

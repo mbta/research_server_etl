@@ -4,7 +4,9 @@ from typing import List
 from typing import NamedTuple
 from collections.abc import Callable
 
+
 import boto3
+from botocore.exceptions import ClientError
 
 from research_etl.utils.util_logging import ProcessLogger
 
@@ -17,14 +19,37 @@ class S3Object(NamedTuple):
     size_bytes: int
 
 
-def get_s3_client() -> boto3.client:
-    """Thin function needed for stubbing tests"""
+def get_s3_client(session: boto3.Session = None) -> boto3.client:
+    """
+    Return an S3 client from the given boto3 session, or from the default session/profile.
+    :param session: Optional boto3.Session to use (e.g., from assumed role)
+    """
     aws_profile = os.getenv("AWS_PROFILE", None)
-
+    if session is not None:
+        return session.client("s3")
     if aws_profile is not None:
         return boto3.Session(profile_name=aws_profile).client("s3")
-
     return boto3.client("s3")
+
+
+def assume_role_session(role_arn: str, session_name: str = "assumed-role-session") -> boto3.Session:
+    """
+    Assume an AWS IAM role and return a boto3.Session using the temporary credentials.
+    :param role_arn: ARN of the role to assume
+    :param session_name: Name for the session
+    :return: boto3.Session with assumed role credentials
+    """
+    sts_client = boto3.client("sts")
+    try:
+        assumed_role = sts_client.assume_role(RoleArn=role_arn, RoleSessionName=session_name)
+        credentials = assumed_role["Credentials"]
+        return boto3.Session(
+            aws_access_key_id=credentials["AccessKeyId"],
+            aws_secret_access_key=credentials["SecretAccessKey"],
+            aws_session_token=credentials["SessionToken"],
+        )
+    except ClientError as e:
+        raise RuntimeError(f"Failed to assume AWS role: {e}") from e
 
 
 def split_object(obj: str) -> tuple[str, str]:
@@ -40,11 +65,14 @@ def split_object(obj: str) -> tuple[str, str]:
     return (bucket, key)
 
 
+# pylint: disable=too-many-locals
 def list_objects(
     partition: str,
     max_objects: int = 1_000_000,
     in_filter: str | None = None,
     in_func: Callable[[S3Object], bool] | None = None,
+    session: boto3.Session = None,
+    s3_client: boto3.client = None,
 ) -> List[S3Object]:
     """
     Get list of S3 objects starting with 'partition'.
@@ -66,7 +94,7 @@ def list_objects(
     )
     bucket, prefix = split_object(partition)
     try:
-        client = get_s3_client()
+        client = s3_client if s3_client is not None else get_s3_client(session=session)
         paginator = client.get_paginator("list_objects_v2")
         pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
 
@@ -99,15 +127,23 @@ def list_objects(
         return []
 
 
-def download_file(object_path: str, file_name: str) -> bool:
+# pylint: enable=too-many-locals
+
+
+def download_file(object_path: str, file_name: str, session: boto3.Session = None) -> bool:
     """
-    Download an S3 object to a local file
-    will overwrite local file, if exists
+    Download an S3 object to a local file, optionally using a provided boto3.Session (e.g., from an assumed role).
+    Will overwrite local file, if exists.
 
     :param object_path: S3 object path to download from (including bucket)
     :param file_name: local file path to save object to
-
+    :param session: Optional boto3.Session to use (e.g., from assume_role_session)
     :return: True if file was downloaded, else False
+
+    Example usage:
+        from research_etl.utils.util_aws import assume_role_session, download_file
+        session = assume_role_session("arn:aws:iam::123456789012:role/YourRole")
+        download_file("s3://bucket/key", "/tmp/file", session=session)
     """
     download_log = ProcessLogger(
         "s3_download_file",
@@ -122,7 +158,7 @@ def download_file(object_path: str, file_name: str) -> bool:
         object_path = object_path.replace("s3://", "")
         bucket, object_name = object_path.split("/", 1)
 
-        s3_client = get_s3_client()
+        s3_client = get_s3_client(session=session)
 
         s3_client.download_file(bucket, object_name, file_name)
 
@@ -135,7 +171,9 @@ def download_file(object_path: str, file_name: str) -> bool:
         return False
 
 
-def file_list_from_s3(bucket_name: str, file_prefix: str, max_list_size: int = 250_000) -> List[str]:
+def file_list_from_s3(
+    bucket_name: str, file_prefix: str, max_list_size: int = 250_000, session: boto3.Session = None
+) -> List[str]:
     """
     provide list of s3 objects based on bucket_name and file_prefix
 
@@ -147,7 +185,7 @@ def file_list_from_s3(bucket_name: str, file_prefix: str, max_list_size: int = 2
     process_logger = ProcessLogger("file_list_from_s3", bucket_name=bucket_name, file_prefix=file_prefix)
 
     try:
-        s3_client = get_s3_client()
+        s3_client = get_s3_client(session=session)
         paginator = s3_client.get_paginator("list_objects_v2")
         pages = paginator.paginate(Bucket=bucket_name, Prefix=file_prefix)
 
@@ -172,7 +210,7 @@ def file_list_from_s3(bucket_name: str, file_prefix: str, max_list_size: int = 2
         return []
 
 
-def delete_object(del_obj: str) -> bool:
+def delete_object(del_obj: str, session: boto3.Session = None) -> bool:
     """
     delete s3 object
 
@@ -183,7 +221,7 @@ def delete_object(del_obj: str) -> bool:
     try:
         process_logger = ProcessLogger("delete_s3_object", del_obj=del_obj)
 
-        s3_client = get_s3_client()
+        s3_client = get_s3_client(session=session)
 
         # trim off leading s3://
         del_obj = del_obj.replace("s3://", "")
@@ -205,7 +243,7 @@ def delete_object(del_obj: str) -> bool:
         return False
 
 
-def rename_s3_object(source_obj: str, dest_obj: str) -> bool:
+def rename_s3_object(source_obj: str, dest_obj: str, session: boto3.Session = None) -> bool:
     """
     rename source_obj to dest_obj as copy and delete operation
 
@@ -217,7 +255,7 @@ def rename_s3_object(source_obj: str, dest_obj: str) -> bool:
     try:
         process_logger = ProcessLogger("rename_s3_object", source_obj=source_obj, dest_obj=dest_obj)
 
-        s3_client = get_s3_client()
+        s3_client = get_s3_client(session=session)
 
         # trim off leading s3://
         source_obj = source_obj.replace("s3://", "")
@@ -233,7 +271,7 @@ def rename_s3_object(source_obj: str, dest_obj: str) -> bool:
             Key=to_obj,
         )
 
-        if not delete_object(source_obj):
+        if not delete_object(source_obj, session=session):
             raise FileExistsError(f"failed to delete {source_obj}")
 
         process_logger.log_complete()

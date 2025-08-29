@@ -9,6 +9,7 @@ import pyarrow.compute as pc
 
 from research_etl.utils.util_rds import DatabaseManager
 from research_etl.utils.util_rds import copy_gzip_csv_to_db
+from research_etl.utils.util_aws import assume_role_session
 from research_etl.utils.util_logging import ProcessLogger
 from research_etl.etl_sb_api import sb_tables
 from research_etl.utils.parquet import ds_from_path
@@ -54,7 +55,7 @@ def create_partitions(ds: pd.dataset, table: sb_tables.SBTable, db: DatabaseMana
     from_dt = datetime.datetime(year=d_min.year, month=d_min.month, day=1)
     end_dt = datetime.datetime(year=d_max.year, month=d_max.month, day=1)
 
-    # partition tables appear as indivudal tables in the postgres schema, but when created are
+    # partition tables appear as individual tables in the postgres schema, but when created are
     # "attached" to the primary table with partitioning rules.
     # this query finds all partition tables associated with the primary "table_name" of `table`
     # this list of partition tables is used to check if any new partition tables need to be created
@@ -118,14 +119,18 @@ def sb_api_load_job(db_manager: DatabaseManager, table: sb_tables.SBTable) -> No
     """
     S&B API data loading job.
 
-    This is the business logice for loading S&B API table data from a parquet dataset to a
-    postgres DB table.
+    This is the business logic for loading S&B API table data from a parquet dataset to a
+    postgres DB table. It assumes an AWS role that has access to the S3 bucket
+    containing the parquet dataset and KMS decryption permissions.
 
     :param db_manager: DB Manager for database calls
     :param table: DB table details
     """
+    # Assume aws role within tid-main for S3 access / KMS decryption
+    session = assume_role_session(os.getenv("ROLE_ARN_WITHIN_TID_FOR_KMS_ACCESS", ""))
+
     ds_path = os.path.join("s3://", SB_PREFIX, table.table_name, "")
-    ds = ds_from_path(ds_path)
+    ds = ds_from_path(ds_path, session=session)
     if ds.count_rows() == 0:
         # no data in parquet dataset
         return
