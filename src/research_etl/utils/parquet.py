@@ -81,6 +81,7 @@ def ds_from_path(source: Union[str, Sequence[str]], session: boto3.Session = Non
     log.add_metadata(num_source=len(paths), paths=",".join(paths))
 
     if isinstance(source, str) and source.startswith("s3://"):  # temporary workaround for pyarrow s3 permissions issue
+        log.add_metadata(status="Using temporary workaround for pyarrow s3 permissions issue")
         sts_client = boto3.client("sts")
         assumed_role = sts_client.assume_role(
             RoleArn=os.getenv("ROLE_ARN_WITHIN_TID_FOR_KMS_ACCESS", ""), RoleSessionName="session_name"
