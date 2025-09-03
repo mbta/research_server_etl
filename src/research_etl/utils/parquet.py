@@ -12,6 +12,7 @@ import pyarrow.parquet as pq
 import pyarrow.dataset as pd
 import pyarrow.compute as pc
 import pyarrow.acero as ac
+from pyarrow import fs
 
 from research_etl.utils.util_logging import ProcessLogger
 from research_etl.utils.util_aws import list_objects
@@ -78,7 +79,29 @@ def ds_from_path(source: Union[str, Sequence[str]], session: boto3.Session = Non
     elif isinstance(source, Sequence):
         paths = [f for f in source if f.endswith(".parquet")]
     log.add_metadata(num_source=len(paths), paths=",".join(paths))
-    ds = pd.dataset([pd.dataset(part, partitioning="hive", format="parquet") for part in paths])
+
+    if isinstance(source, str) and source.startswith("s3://"):  # temporary workaround for pyarrow s3 permissions issue
+        log.add_metadata(status="Using temporary workaround for pyarrow s3 permissions issue")
+        sts_client = boto3.client("sts")
+        assumed_role = sts_client.assume_role(
+            RoleArn=os.getenv("ROLE_ARN_WITHIN_TID_FOR_KMS_ACCESS", ""), RoleSessionName="session_name"
+        )
+        credentials = assumed_role["Credentials"]
+
+        s3 = fs.S3FileSystem(
+            access_key=credentials["AccessKeyId"],
+            secret_key=credentials["SecretAccessKey"],
+            session_token=credentials["SessionToken"],
+            region="us-east-1",
+        )
+
+        # remove s3:// prefix (pyarrow doesn't accept it if filesystem is explicitly provided)
+        paths = [path[5:] if path.startswith("s3://") else path for path in paths]
+
+        ds = pd.dataset([pd.dataset(part, partitioning="hive", format="parquet", filesystem=s3) for part in paths])
+    else:
+        ds = pd.dataset([pd.dataset(part, partitioning="hive", format="parquet") for part in paths])
+
     log.log_complete(num_sources=len(paths))
     return ds
 
