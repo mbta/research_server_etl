@@ -84,9 +84,7 @@ def ds_from_path(source: Union[str, Sequence[str]], session: boto3.Session = Non
         log.add_metadata(status="Using temporary workaround for pyarrow s3 permissions issue")
         sts_client = boto3.client("sts")
         assumed_role = sts_client.assume_role(
-            RoleArn=os.getenv("ROLE_ARN_WITHIN_TID_FOR_KMS_ACCESS", ""),
-            RoleSessionName="session_name",
-            DurationSeconds=43200,
+            RoleArn=os.getenv("ROLE_ARN_WITHIN_TID_FOR_KMS_ACCESS", ""), RoleSessionName="session_name"
         )
         credentials = assumed_role["Credentials"]
 
