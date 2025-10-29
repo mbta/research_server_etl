@@ -57,3 +57,15 @@ tvmtable = SBTable(
     table_type="static",
     part_column="",
 )
+
+cashless_payments = SBTable(
+    table_name="v_cashless_payments",
+    table_type="transaction",
+    part_column="requesttimestamp",
+)
+
+inspections = SBTable(
+    table_name="v_inspections",
+    table_type="transaction",
+    part_column="inquirytimestamp",
+)

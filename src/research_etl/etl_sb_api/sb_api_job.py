@@ -36,6 +36,8 @@ SB_TABLES = [
     sb_tables.sales_txns,
     sb_tables.validation_taps,
     sb_tables.shiftevent,
+    sb_tables.cashless_payments,
+    sb_tables.inspections,
 ]
 
 
