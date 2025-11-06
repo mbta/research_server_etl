@@ -297,6 +297,63 @@ CREATE TABLE sb_api.v_tvmtable (
     , tvmcomment TEXT
 );
 
+CREATE TABLE sb_api.v_cashless_payments (
+    job_id BIGINT
+    , identity_value BIGINT
+    , merchantid TEXT
+    , chargeid BIGINT
+    , actionindex BIGINT
+    , actiontype TEXT
+    , capture BOOLEAN
+    , tapdebtrecovery BOOLEAN
+    , actionresult TEXT
+    , responsereferencecode TEXT
+    , paymentprovidererror TEXT
+    , requesttimestamp TIMESTAMP
+    , responsetimestamp TIMESTAMP
+    , tenant TEXT
+    , terminalid TEXT
+    , mediumid TEXT
+    , paymenttype TEXT
+    , paymentcardtype TEXT
+    , carddataentrymode TEXT
+    , transitmode BOOLEAN
+    , cardbrand TEXT
+    , cardbin TEXT
+    , cardmaskedpan TEXT
+    , paymentaccountreference TEXT
+    , servicereferenceid TEXT
+    , requestreferenceid TEXT
+    , responsetransactionnumber TEXT
+    , avsresponsecode TEXT
+    , cvvresponsecode TEXT
+    , amount BIGINT
+    , currency TEXT
+    , cardholderauthorizationmethod TEXT
+) PARTITION BY RANGE (requesttimestamp);
+
+CREATE INDEX ON sb_api.v_cashless_payments (requesttimestamp);
+
+CREATE TABLE sb_api.v_inspections (
+    job_id BIGINT
+    , identity_value BIGINT
+    , inspectionid BIGINT
+    , inquirytimestamp TIMESTAMP
+    , businessentityid BIGINT
+    , deviceid TEXT
+    , deviceclassid TEXT
+    , mediumid TEXT
+    , onlineprocessingstatus BOOLEAN
+    , preresult TEXT
+    , result TEXT
+    , overridereason TEXT
+    , inspectionstoppointid TEXT
+    , lineid TEXT
+    , servicepatternid TEXT
+) PARTITION BY RANGE (inquirytimestamp);
+
+CREATE INDEX ON sb_api.v_inspections (inquirytimestamp);
+
 -- ****************************************** --
 -- END INIT SB_API SCHEMA --
 -- ****************************************** --
