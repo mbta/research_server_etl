@@ -194,11 +194,11 @@ def run(db_manager: DatabaseManager) -> None:
 
     list s3 objects from afc/in bucket and process any found files
 
-    each found file should temporarily downoladed locally for processsing and
+    each found file should temporarily downloaded locally for processing and
     then deleted
     """
-    s3_in_path = "afc_oracle_db"
-    s3_error_path = "afc_oracle_db_error"
+    s3_in_path = "afc_oracle_db/"
+    s3_error_path = "afc_oracle_db_error/"
     s3_in_bucket = os.getenv("AFC_IN_BUCKET", "")
 
     process_log = ProcessLogger("afc_etl_job")
