@@ -14,7 +14,7 @@ runs:
     - name: Install ASDF Tools
       # only install if we can't find the cache (i.e. different os or new tools)
       if: "!steps.asdf-cache.outputs.cache-hit"
-      uses: asdf-vm/actions/install@v2
+      uses: asdf-vm/actions/install@v4
 
     - name: Re-Shim ASDF Install
       uses: mbta/actions/reshim-asdf@v1
