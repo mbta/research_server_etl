@@ -405,7 +405,7 @@ CREATE TABLE odx2.fare_transaction (
     , amount INTEGER
     , sv_balance INTEGER
     , ride_balance SMALLINT
-    , account_key TEXT
+    , account_id TEXT
     , xfer_to BOOLEAN
     , vehicle_id TEXT
     , route_id TEXT
