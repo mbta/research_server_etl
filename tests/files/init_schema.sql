@@ -230,6 +230,7 @@ CREATE TABLE sb_api.v_shiftevent (
     , tarifflocationid BIGINT
     , locationtype BIGINT
     , partitioningdate TIMESTAMP
+    , eventrelateddata TEXT
 ) PARTITION BY RANGE (creadate);
 
 CREATE INDEX ON sb_api.v_shiftevent (creadate);
